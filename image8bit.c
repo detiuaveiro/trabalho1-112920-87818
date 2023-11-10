@@ -11,11 +11,11 @@
 
 // Student authors (fill in below):
 // NMec:  Name:
-// 
-// 
+// 112920 Olha Buts
+// 87818 André Correia
 // 
 // Date:
-//
+// 24.11.23
 
 #include "image8bit.h"
 
@@ -141,6 +141,52 @@ static int check(int condition, const char* failmsg) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /// Init Image library.  (Call once!)
 /// Currently, simply calibrate instrumentation and set names of counters.
 void ImageInit(void) { ///
@@ -155,6 +201,46 @@ void ImageInit(void) { ///
 // Add more macros here...
 
 // TIP: Search for PIXMEM or InstrCount to see where it is incremented!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /// Image management functions
@@ -183,6 +269,56 @@ void ImageDestroy(Image* imgp) { ///
   assert (imgp != NULL);
   // Insert your code here!
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /// PGM file operations
@@ -264,6 +400,76 @@ int ImageSave(Image img, const char* filename) { ///
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /// Information queries
 
 /// These functions do not modify the image and never fail.
@@ -340,6 +546,93 @@ void ImageSetPixel(Image img, int x, int y, uint8 level) { ///
   PIXMEM += 1;  // count one pixel access (store)
   img->pixel[G(img, x, y)] = level;
 } 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /// Pixel transformations
