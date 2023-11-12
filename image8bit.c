@@ -812,24 +812,43 @@ Image ImageRotate(Image img) { ///
   Image newImg = ImageCreate(img->height, img->width, img->maxval);
   if (newImg == NULL){ /*bla bla bla*/ return NULL;}
   
+  // For Debugging Purposes:
+  //printf_s("newImg->height = %d\n", newImg->height);
+  //printf_s("newImg->width = %d\n", newImg->width);
+
   // Algoritmo:
-  int pixelIndex;
-  uint8 value;
+  int numColTotal = img->width;
+  int numColFeitas = 0;
+  int originalPixelIndex = 0;
+  int originalPixelValue = 0;
+  int originalWidth = img->width -1;
+  int originalHeight = 0;
+  int newWidth = img->width -1;
+  int newHeight = 0;
 
-  int numColunas = img->width;
-  int heightYold = img->height;
-  int widthXold = 0;
-  int heightYnew = 0;
-  int widthXnew = 0;
-
-  for (int i = 0; i < numColunas; i++)
+  while (numColFeitas != numColTotal)
   {
-    pixelIndex = G(img, widthXold, heightYold);
-    value = ImageGetPixel(img, widthXold, heightYold--);
+    for (originalHeight = img->height - 1; originalHeight >= 0; originalHeight--)
+    {
+      // For Debugging Purposes:
+      //printf_s("\n\noriginalHeight = %d\n", originalHeight);
+      //printf_s("originalWidth = %d\n", originalWidth);
+      //printf_s("newHeight = %d\n", newHeight);
+      //printf_s("newWidth = %d\n", newWidth);
 
-    ImageSetPixel(newImg, widthXnew++, heightYnew++, value);
+      originalPixelIndex = G(img, originalWidth, originalHeight);
+      originalPixelValue = ImageGetPixel(img, originalWidth, originalHeight);
+      ImageSetPixel(newImg, newWidth, newHeight, originalPixelValue);
 
-    if (heightYold == 0) { heightYold = img->height; widthXold++; }
+      newWidth--;
+    }
+    // For Debugging Purposes:
+    //printf_s("numColFeitas = %d\n", numColFeitas);
+
+    newWidth = img->width -1;
+    originalWidth--;
+    newHeight++;
+    numColFeitas++;
   }
 
   return newImg;
@@ -842,9 +861,52 @@ Image ImageRotate(Image img) { ///
 /// On success, a new image is returned.
 /// (The caller is responsible for destroying the returned image!)
 /// On failure, returns NULL and errno/errCause are set accordingly.
-Image ImageMirror(Image img) { ///
+Image ImageMirror(Image img)
+{
   assert (img != NULL);
-  // Insert your code here!
+  Image newImg = ImageCreate(img->height, img->width, img->maxval);
+  if (newImg == NULL){ /*bla bla bla*/ return NULL;}
+  
+  // For Debugging Purposes:
+  //printf_s("newImg->height = %d\n", newImg->height);
+  //printf_s("newImg->width = %d\n", newImg->width);
+
+  // Algoritmo:
+  int numColTotal = img->width;
+  int numColFeitas = 0;
+  int originalPixelIndex = 0;
+  int originalPixelValue = 0;
+  int originalWidth = 0;
+  int originalHeight = 0;
+  int newWidth = 0;
+  int newHeight = 0;
+
+  while (numColFeitas != numColTotal)
+  {
+    for (originalWidth = img->width - 1; originalWidth >= 0; originalWidth--)
+    {
+      // For Debugging Purposes:
+      //printf_s("\n\noriginalHeight = %d\n", originalHeight);
+      //printf_s("originalWidth = %d\n", originalWidth);
+      //printf_s("newHeight = %d\n", newHeight);
+      //printf_s("newWidth = %d\n", newWidth);
+
+      originalPixelIndex = G(img, originalWidth, originalHeight);
+      originalPixelValue = ImageGetPixel(img, originalWidth, originalHeight);
+      ImageSetPixel(newImg, newWidth, newHeight, originalPixelValue);
+
+      newWidth++;
+    }
+    // For Debugging Purposes:
+    //printf_s("numColFeitas = %d\n", numColFeitas);
+
+    newWidth = 0;
+    originalHeight++;
+    newHeight++;
+    numColFeitas++;
+  }
+
+  return newImg;
 }
 
 /// Crop a rectangular subimage from img.
