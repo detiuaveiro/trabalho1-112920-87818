@@ -194,7 +194,6 @@ static int check(int condition, const char* failmsg) {
 
 
 
-
 /// Init Image library.  (Call once!)
 /// Currently, simply calibrate instrumentation and set names of counters.
 void ImageInit(void) { ///
@@ -897,20 +896,26 @@ Image ImageCrop(Image img, int x, int y, int w, int h) { ///
   assert (img != NULL);
   assert (ImageValidRect(img, x, y, w, h));
 
-  Image newImg = ImageCreate(w, h, 0);
+  Image newImg = ImageCreate(w, h, 1);
   if (newImg == NULL){ /*bla bla bla*/ return NULL;}
 
-  int numLinhas = 0;
-  int pixelValue = 0;
-  while (numLinhas <= y+h)
+  int numLinhas = y;
+  uint8_t pixelValue = 0;
+  uint8_t maxValue = 0;
+  int index = 0;
+  while (numLinhas < y+h)
   {
-    for (int i = 0; i <= w; i++)
+    for (int i = 0; i < w; i++)
     {
       pixelValue = ImageGetPixel(img, x+i, numLinhas);
-      newImg->pixel[i] = pixelValue;
+      if (pixelValue > maxValue) {maxValue = pixelValue;}
+      newImg->pixel[index] = pixelValue;
+      index++;
     }
     numLinhas++;
   }
+
+  newImg->maxval = maxValue;
 
   return newImg;
 }
@@ -949,7 +954,7 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2) { ///
   assert (img1 != NULL);
   assert (img2 != NULL);
   assert (ImageValidPos(img1, x, y));
-  return NULL;
+  return 0;
   // Insert your code here!
 }
 
@@ -960,10 +965,9 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2) { ///
 int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) { ///
   assert (img1 != NULL);
   assert (img2 != NULL);
-  return NULL;
+  return 0;
   // Insert your code here!
 }
-
 
 /// Filtering
 
@@ -975,3 +979,82 @@ void ImageBlur(Image img, int dx, int dy) { ///
   // Insert your code here!
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+void main()
+{
+  Image myImg = ImageLoad("test.pgm");
+  //ImageSave(myImg, "deleteMe3.pgm");
+
+  //uint8_t min;
+  //uint8_t max;
+  //ImageStats(myImg, &min, &max);
+  //printf_s("ImageValidPos = %d\n", ImageValidPos(myImg, 0, 0));
+  //printf_s("ImageValidRect = %d\n", ImageValidRect(myImg, 85, 85, 10, 10));
+
+  //int gLoc = G(myImg, 37, 34);
+  //printf_s("Static Inline G: %d\n", gLoc);
+  //printf_s("Color of G: %d\n", myImg->pixel[gLoc]);
+
+  //ImageNegative(myImg);
+  //ImageSave(myImg, "negativeImage.pgm");
+
+  //ImageThreshold(myImg, 155);
+  //ImageSave(myImg, "thresholdImage.pgm");
+
+  //ImageBrighten(myImg, 0.3);
+  //ImageSave(myImg, "brightenImage.pgm");
+
+  //Image newImg1 = ImageRotate(myImg);
+  //ImageSave(newImg1, "RotateImage.pgm");
+
+  //Image newImg2 = ImageMirror(myImg);
+  //ImageSave(newImg2, "MirrorImage.pgm");
+
+  Image newImg3 = ImageCrop(myImg, 37, 18, 35, 27);
+  ImageSave(newImg3, "CropImage.pgm");
+  
+}
+*/
