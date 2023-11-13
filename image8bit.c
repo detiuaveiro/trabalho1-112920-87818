@@ -564,8 +564,6 @@ int ImageValidPos(Image img, int x, int y) { ///
 /// Check if rectangular area (x,y,w,h) is completely inside img.
 int ImageValidRect(Image img, int x, int y, int w, int h) { ///
   assert (img != NULL);
-  int heigtImg = ImageHeight(img);
-  int widthImg = ImageWidth(img);
 
   // Verificação de ImageValidPos():
   int validPos = ImageValidPos(img, x, y);
