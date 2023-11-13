@@ -809,7 +809,7 @@ void ImageBrighten(Image img, double factor) { ///
 /// On failure, returns NULL and errno/errCause are set accordingly.
 Image ImageRotate(Image img) { ///
   assert (img != NULL);
-  Image newImg = ImageCreate(img->height, img->width, img->maxval);
+  Image newImg = ImageCreate(img->width, img->height, img->maxval);
   if (newImg == NULL){ /*bla bla bla*/ return NULL;}
 
   // Algoritmo:
@@ -850,7 +850,7 @@ Image ImageRotate(Image img) { ///
 Image ImageMirror(Image img)
 {
   assert (img != NULL);
-  Image newImg = ImageCreate(img->height, img->width, img->maxval);
+  Image newImg = ImageCreate(img->width, img->height, img->maxval);
   if (newImg == NULL){ /*bla bla bla*/ return NULL;}
 
   // Algoritmo:
@@ -896,7 +896,23 @@ Image ImageMirror(Image img)
 Image ImageCrop(Image img, int x, int y, int w, int h) { ///
   assert (img != NULL);
   assert (ImageValidRect(img, x, y, w, h));
-  // Insert your code here!
+
+  Image newImg = ImageCreate(w, h, 0);
+  if (newImg == NULL){ /*bla bla bla*/ return NULL;}
+
+  int numLinhas = 0;
+  int pixelValue = 0;
+  while (numLinhas <= y+h)
+  {
+    for (int i = 0; i <= w; i++)
+    {
+      pixelValue = ImageGetPixel(img, x+i, numLinhas);
+      newImg->pixel[i] = pixelValue;
+    }
+    numLinhas++;
+  }
+
+  return newImg;
 }
 
 
