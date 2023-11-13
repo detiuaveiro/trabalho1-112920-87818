@@ -783,6 +783,32 @@ void ImageBrighten(Image img, double factor) { ///
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /// Geometric transformations
 
 /// These functions apply geometric transformations to an image,
@@ -919,17 +945,93 @@ Image ImageCrop(Image img, int x, int y, int w, int h) { ///
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /// Operations on two images
 
 /// Paste an image into a larger image.
 /// Paste img2 into position (x, y) of img1.
 /// This modifies img1 in-place: no allocation involved.
 /// Requires: img2 must fit inside img1 at position (x, y).
-void ImagePaste(Image img1, int x, int y, Image img2) { ///
+void ImagePaste(Image img1, int x, int y, Image img2)
+{
   assert (img1 != NULL);
   assert (img2 != NULL);
   assert (ImageValidRect(img1, x, y, img2->width, img2->height));
-  // Insert your code here!
+
+  int img1NumLinhas = y;
+  int img2NumLinhas = 0;
+  uint8_t img2PixelValue = 0;
+  uint8_t img1MaxValue = img1->maxval;
+  while (img1NumLinhas < y+img2->height)
+  {
+    for (int i = 0; i < img2->width; i++)
+    {
+      img2PixelValue = ImageGetPixel(img2, i, img2NumLinhas);
+      if (img2PixelValue > img1MaxValue) {img1MaxValue = img2PixelValue;}
+      ImageSetPixel(img1, x+i, img1NumLinhas, img2PixelValue);
+    }
+    img1NumLinhas++;
+    img2NumLinhas++;
+  }
+
+  img1->maxval = img1MaxValue;
 }
 
 /// Blend an image into a larger image.
@@ -1051,8 +1153,10 @@ void main()
   //Image newImg2 = ImageMirror(myImg);
   //ImageSave(newImg2, "MirrorImage.pgm");
 
-  Image newImg3 = ImageCrop(myImg, 37, 18, 35, 27);
-  ImageSave(newImg3, "CropImage.pgm");
-  
-}
-*/
+  //Image newImg3 = ImageCrop(myImg, 1, 1, 40, 40);
+  //ImageSave(newImg3, "CropImage.pgm");
+
+  Image myImg2 = ImageLoad("cropImage.pgm");
+  ImagePaste(myImg, 30, 30, myImg2);
+  ImageSave(myImg, "pasteImage.pgm");
+}*/
