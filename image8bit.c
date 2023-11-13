@@ -285,14 +285,14 @@ Image ImageCreate(int width, int height, uint8 maxval) { ///
   assert (0 < maxval && maxval <= PixMax);
 
   Image myImg = (Image)malloc(sizeof(struct image));
-  if (myImg == NULL) {perror("ImageCreate"); return NULL;}
+  if (myImg == NULL) {errCause ="ImageCreate"; errsave=12; return NULL;}
 
   myImg->height = height;
   myImg->width = width;
   myImg->maxval = maxval; 
 
   myImg->pixel = (uint8*)malloc(sizeof(uint8)*width*height);
-  if (myImg->pixel == NULL) {perror("ImageCreate"); free(myImg);  return NULL;}
+  if (myImg->pixel == NULL) {errCause ="ImageCreate"; errsave=12; free(myImg);  return NULL;}
   
   return myImg;
 }
@@ -750,7 +750,7 @@ void ImageBrighten(Image img, double factor) { ///
   for (int i = 0; i < img->width * img->height; i++)
   {
 	n = img->pixel[i];
-	n = (uint8)(n*factor);
+	n = (uint8)(n*factor+0.5);
 	if (n > PixMax) {img->pixel[i] = PixMax;}
 	else {img->pixel[i] = n;}
   }
@@ -811,15 +811,10 @@ Image ImageRotate(Image img) { ///
   assert (img != NULL);
   Image newImg = ImageCreate(img->height, img->width, img->maxval);
   if (newImg == NULL){ /*bla bla bla*/ return NULL;}
-  
-  // For Debugging Purposes:
-  //printf_s("newImg->height = %d\n", newImg->height);
-  //printf_s("newImg->width = %d\n", newImg->width);
 
   // Algoritmo:
   int numColTotal = img->width;
   int numColFeitas = 0;
-  int originalPixelIndex = 0;
   int originalPixelValue = 0;
   int originalWidth = img->width -1;
   int originalHeight = 0;
@@ -830,20 +825,11 @@ Image ImageRotate(Image img) { ///
   {
     for (originalHeight = img->height - 1; originalHeight >= 0; originalHeight--)
     {
-      // For Debugging Purposes:
-      //printf_s("\n\noriginalHeight = %d\n", originalHeight);
-      //printf_s("originalWidth = %d\n", originalWidth);
-      //printf_s("newHeight = %d\n", newHeight);
-      //printf_s("newWidth = %d\n", newWidth);
-
-      originalPixelIndex = G(img, originalWidth, originalHeight);
       originalPixelValue = ImageGetPixel(img, originalWidth, originalHeight);
       ImageSetPixel(newImg, newWidth, newHeight, originalPixelValue);
 
       newWidth--;
     }
-    // For Debugging Purposes:
-    //printf_s("numColFeitas = %d\n", numColFeitas);
 
     newWidth = img->width -1;
     originalWidth--;
@@ -866,15 +852,10 @@ Image ImageMirror(Image img)
   assert (img != NULL);
   Image newImg = ImageCreate(img->height, img->width, img->maxval);
   if (newImg == NULL){ /*bla bla bla*/ return NULL;}
-  
-  // For Debugging Purposes:
-  //printf_s("newImg->height = %d\n", newImg->height);
-  //printf_s("newImg->width = %d\n", newImg->width);
 
   // Algoritmo:
   int numColTotal = img->width;
   int numColFeitas = 0;
-  int originalPixelIndex = 0;
   int originalPixelValue = 0;
   int originalWidth = 0;
   int originalHeight = 0;
@@ -885,21 +866,12 @@ Image ImageMirror(Image img)
   {
     for (originalWidth = img->width - 1; originalWidth >= 0; originalWidth--)
     {
-      // For Debugging Purposes:
-      //printf_s("\n\noriginalHeight = %d\n", originalHeight);
-      //printf_s("originalWidth = %d\n", originalWidth);
-      //printf_s("newHeight = %d\n", newHeight);
-      //printf_s("newWidth = %d\n", newWidth);
-
-      originalPixelIndex = G(img, originalWidth, originalHeight);
       originalPixelValue = ImageGetPixel(img, originalWidth, originalHeight);
       ImageSetPixel(newImg, newWidth, newHeight, originalPixelValue);
 
       newWidth++;
     }
-    // For Debugging Purposes:
-    //printf_s("numColFeitas = %d\n", numColFeitas);
-
+    
     newWidth = 0;
     originalHeight++;
     newHeight++;
