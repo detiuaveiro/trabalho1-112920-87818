@@ -740,16 +740,17 @@ void ImageThreshold(Image img, uint8 thr)
 /// Multiply each pixel level by a factor, but saturate at maxval.
 /// This will brighten the image if factor>1.0 and
 /// darken the image if factor<1.0.
-void ImageBrighten(Image img, double factor) { ///
+void ImageBrighten(Image img, double factor)
+{
   assert (img != NULL);
   assert (factor >= 0.0);
-  uint8 n;
+  int n;
   for (int i = 0; i < img->width * img->height; i++)
   {
-	n = img->pixel[i];
-	n = (uint8)(n*factor+0.5);
-	if (n > PixMax) {img->pixel[i] = PixMax;}
-	else {img->pixel[i] = n;}
+    n = (int) img->pixel[i];
+    n = n*factor + 0.5;
+    if (n > (int)PixMax) {img->pixel[i] = PixMax;}
+    else {img->pixel[i] = (uint8)n;}
   }
 }
 
@@ -830,34 +831,24 @@ void ImageBrighten(Image img, double factor) { ///
 /// On success, a new image is returned.
 /// (The caller is responsible for destroying the returned image!)
 /// On failure, returns NULL and errno/errCause are set accordingly.
-Image ImageRotate(Image img) { ///
+Image ImageRotate(Image img)
+{
   assert (img != NULL);
-  Image newImg = ImageCreate(img->width, img->height, img->maxval);
+  Image newImg = ImageCreate(img->height, img->width, img->maxval); // Está trocado para passar de 16:9 para 9:16 se necessário.
   if (newImg == NULL){ /*bla bla bla*/ return NULL;}
 
   // Algoritmo:
-  int numColTotal = img->width;
-  int numColFeitas = 0;
-  int originalPixelValue = 0;
-  int originalWidth = img->width -1;
-  int originalHeight = 0;
-  int newWidth = img->width -1;
-  int newHeight = 0;
+  int heightNew = 0;
+  uint8 pixelValue = 0;
 
-  while (numColFeitas != numColTotal)
+  for (int widthOriginal = img->width - 1; widthOriginal >= 0; widthOriginal--)
   {
-    for (originalHeight = img->height - 1; originalHeight >= 0; originalHeight--)
+    for (int i = 0; i <= (img->height - 1); i++)
     {
-      originalPixelValue = ImageGetPixel(img, originalWidth, originalHeight);
-      ImageSetPixel(newImg, newWidth, newHeight, originalPixelValue);
-
-      newWidth--;
+      pixelValue = ImageGetPixel(img, widthOriginal, i);
+      ImageSetPixel(newImg, i, heightNew, pixelValue);
     }
-
-    newWidth = img->width -1;
-    originalWidth--;
-    newHeight++;
-    numColFeitas++;
+    heightNew++;
   }
 
   return newImg;
@@ -877,28 +868,15 @@ Image ImageMirror(Image img)
   if (newImg == NULL){ /*bla bla bla*/ return NULL;}
 
   // Algoritmo:
-  int numColTotal = img->width;
-  int numColFeitas = 0;
-  int originalPixelValue = 0;
-  int originalWidth = 0;
-  int originalHeight = 0;
-  int newWidth = 0;
-  int newHeight = 0;
+  uint8 pixelValue = 0;
 
-  while (numColFeitas != numColTotal)
+  for (int heightOriginal = img->height - 1; heightOriginal >= 0; heightOriginal--)
   {
-    for (originalWidth = img->width - 1; originalWidth >= 0; originalWidth--)
+    for (int i = 0; i <= (img->width - 1); i++)
     {
-      originalPixelValue = ImageGetPixel(img, originalWidth, originalHeight);
-      ImageSetPixel(newImg, newWidth, newHeight, originalPixelValue);
-
-      newWidth++;
+      pixelValue = ImageGetPixel(img, i, heightOriginal);
+      ImageSetPixel(newImg, img->width-1 - i, heightOriginal, pixelValue);
     }
-    
-    newWidth = 0;
-    originalHeight++;
-    newHeight++;
-    numColFeitas++;
   }
 
   return newImg;
@@ -939,7 +917,7 @@ Image ImageCrop(Image img, int x, int y, int w, int h) { ///
     numLinhas++;
   }
 
-  newImg->maxval = maxValue;
+  newImg->maxval = (int)maxValue;
 
   return newImg;
 }
@@ -1040,12 +1018,38 @@ void ImagePaste(Image img1, int x, int y, Image img2)
 /// Requires: img2 must fit inside img1 at position (x, y).
 /// alpha usually is in [0.0, 1.0], but values outside that interval
 /// may provide interesting effects.  Over/underflows should saturate.
-void ImageBlend(Image img1, int x, int y, Image img2, double alpha) { ///
+void ImageBlend(Image img1, int x, int y, Image img2, double alpha)
+{
   assert (img1 != NULL);
   assert (img2 != NULL);
   assert (ImageValidRect(img1, x, y, img2->width, img2->height));
-  // Insert your code here!
+
+  uint8 blend;
+  int img1NumLinhas = y;
+  int img2NumLinhas = 0;
+  uint8 img1PixelValue = 0;
+  uint8 img2PixelValue = 0;
+  uint8 img1MaxValue = img1->maxval;
+  while (img1NumLinhas < y+img2->height)
+  {
+    for (int i = 0; i < img2->width; i++)
+    {
+      img1PixelValue = ImageGetPixel(img1, x+i, img1NumLinhas);
+      img2PixelValue = ImageGetPixel(img2, i, img2NumLinhas);
+
+      blend = (uint8)(img1PixelValue + alpha * (img2PixelValue - img1PixelValue) + 0.5); // byte 30116 -> byte 49967 com +0.5
+      if (blend > PixMax) {ImageSetPixel(img1, x+i, img1NumLinhas, PixMax);}
+      else if (blend < (uint8)0) {ImageSetPixel(img1, x+i, img1NumLinhas, 0);}
+      else {ImageSetPixel(img1, x+i, img1NumLinhas, blend);}
+      if (img2PixelValue > img1MaxValue) {img1MaxValue = img2PixelValue;}
+    }
+    img1NumLinhas++;
+    img2NumLinhas++;
+  }
+
+  img1->maxval = (int)img1MaxValue;
 }
+
 
 /// Compare an image to a subimage of a larger image.
 /// Returns 1 (true) if img2 matches subimage of img1 at pos (x, y).
@@ -1122,10 +1126,10 @@ void ImageBlur(Image img, int dx, int dy) { ///
 
 
 
-/*
 void main()
 {
-  Image myImg = ImageLoad("test.pgm");
+  Image myImg = ImageLoad("blend.pgm");
+  Image myImg2 = ImageLoad("test/blend.pgm");
   //ImageSave(myImg, "deleteMe3.pgm");
 
   //uint8_t min;
@@ -1139,24 +1143,39 @@ void main()
   //printf_s("Color of G: %d\n", myImg->pixel[gLoc]);
 
   //ImageNegative(myImg);
-  //ImageSave(myImg, "negativeImage.pgm");
+  //ImageSave(myImg, "myTests\\negativeImage.pgm");
 
   //ImageThreshold(myImg, 155);
-  //ImageSave(myImg, "thresholdImage.pgm");
+  //ImageSave(myImg, "myTests\\thresholdImage.pgm");
 
-  //ImageBrighten(myImg, 0.3);
-  //ImageSave(myImg, "brightenImage.pgm");
+  //ImageBrighten(myImg, 1.5);
+  //ImageSave(myImg, "myTests\\brightenImage.pgm");
 
   //Image newImg1 = ImageRotate(myImg);
-  //ImageSave(newImg1, "RotateImage.pgm");
+  //ImageSave(newImg1, "myTests\\rotateImage.pgm");
 
   //Image newImg2 = ImageMirror(myImg);
-  //ImageSave(newImg2, "MirrorImage.pgm");
+  //ImageSave(newImg2, "myTests\\mirrorImage.pgm");
 
-  //Image newImg3 = ImageCrop(myImg, 1, 1, 40, 40);
-  //ImageSave(newImg3, "CropImage.pgm");
+  //Image newImg3 = ImageCrop(myImg, 1, 1, 1400, 1000);
+  //ImageSave(newImg3, "myTests\\cropImage.pgm");
 
-  Image myImg2 = ImageLoad("cropImage.pgm");
-  ImagePaste(myImg, 30, 30, myImg2);
-  ImageSave(myImg, "pasteImage.pgm");
-}*/
+  //Image myImg2 = ImageLoad("myTests\\negativeImageCropped.pgm");
+  //ImagePaste(myImg, 100, 100, myImg2);
+  //ImageSave(myImg, "myTests\\pasteImage.pgm");
+
+  //Image myImg2 = ImageLoad("test/small.pgm");
+  //ImageBlend(myImg, 100, 100, myImg2, 0.330);
+  //ImageSave(myImg, "myTests\\blendImage.pgm");
+
+  int pixel = 0;
+  for (int i = 0; i < sizeof(uint8)*myImg->width*myImg->height; i++)
+  {
+    if (myImg->pixel[i] != myImg2->pixel[i])
+    {
+      printf("Index = %d\nValueOfImg1 = %d\nValueOfImg2 = %d\n", i, myImg->pixel[i], myImg2->pixel[i]);
+      pixel = i;
+    }
+  }
+
+}
