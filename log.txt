@@ -1,0 +1,9 @@
+Index = 44868
+ValueOfImg1 = 172
+ValueOfImg2 = 173
+Index = 45460
+ValueOfImg1 = 78
+ValueOfImg2 = 79
+Index = 48156
+ValueOfImg1 = 88
+ValueOfImg2 = 89

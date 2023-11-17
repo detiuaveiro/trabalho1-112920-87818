@@ -894,7 +894,8 @@ Image ImageMirror(Image img)
 /// On success, a new image is returned.
 /// (The caller is responsible for destroying the returned image!)
 /// On failure, returns NULL and errno/errCause are set accordingly.
-Image ImageCrop(Image img, int x, int y, int w, int h) { ///
+Image ImageCrop(Image img, int x, int y, int w, int h)
+{
   assert (img != NULL);
   assert (ImageValidRect(img, x, y, w, h));
 
@@ -903,21 +904,24 @@ Image ImageCrop(Image img, int x, int y, int w, int h) { ///
 
   int numLinhas = y;
   uint8_t pixelValue = 0;
-  uint8_t maxValue = 0;
   int index = 0;
   while (numLinhas < y+h)
   {
     for (int i = 0; i < w; i++)
     {
       pixelValue = ImageGetPixel(img, x+i, numLinhas);
-      if (pixelValue > maxValue) {maxValue = pixelValue;}
       newImg->pixel[index] = pixelValue;
       index++;
     }
     numLinhas++;
   }
 
-  newImg->maxval = (int)maxValue;
+  int maxValue = 0;
+  for(int i = 0; i < newImg->width * newImg->height; i++)
+  {
+    if (newImg->pixel[i] > maxValue) {maxValue = newImg->pixel[i];}
+  }
+  newImg->maxval = maxValue;  
 
   return newImg;
 }
@@ -996,20 +1000,23 @@ void ImagePaste(Image img1, int x, int y, Image img2)
   int img1NumLinhas = y;
   int img2NumLinhas = 0;
   uint8_t img2PixelValue = 0;
-  uint8_t img1MaxValue = img1->maxval;
   while (img1NumLinhas < y+img2->height)
   {
     for (int i = 0; i < img2->width; i++)
     {
       img2PixelValue = ImageGetPixel(img2, i, img2NumLinhas);
-      if (img2PixelValue > img1MaxValue) {img1MaxValue = img2PixelValue;}
       ImageSetPixel(img1, x+i, img1NumLinhas, img2PixelValue);
     }
     img1NumLinhas++;
     img2NumLinhas++;
   }
 
-  img1->maxval = img1MaxValue;
+  int maxValue = 0;
+  for(int i = 0; i < img1->width * img1->height; i++)
+  {
+    if (img1->pixel[i] > maxValue) {maxValue = img1->pixel[i];}
+  }
+  img1->maxval = maxValue;
 }
 
 /// Blend an image into a larger image.
@@ -1024,30 +1031,35 @@ void ImageBlend(Image img1, int x, int y, Image img2, double alpha)
   assert (img2 != NULL);
   assert (ImageValidRect(img1, x, y, img2->width, img2->height));
 
+
   uint8 blend;
   int img1NumLinhas = y;
   int img2NumLinhas = 0;
   uint8 img1PixelValue = 0;
   uint8 img2PixelValue = 0;
-  uint8 img1MaxValue = img1->maxval;
   while (img1NumLinhas < y+img2->height)
   {
     for (int i = 0; i < img2->width; i++)
     {
       img1PixelValue = ImageGetPixel(img1, x+i, img1NumLinhas);
       img2PixelValue = ImageGetPixel(img2, i, img2NumLinhas);
+  
+      blend = (uint8) ((((1-alpha)*img1PixelValue) + (alpha*img2PixelValue)) + 0.5);
 
-      blend = (uint8)(img1PixelValue + alpha * (img2PixelValue - img1PixelValue) + 0.5); // byte 30116 -> byte 49967 com +0.5
       if (blend > PixMax) {ImageSetPixel(img1, x+i, img1NumLinhas, PixMax);}
       else if (blend < (uint8)0) {ImageSetPixel(img1, x+i, img1NumLinhas, 0);}
       else {ImageSetPixel(img1, x+i, img1NumLinhas, blend);}
-      if (img2PixelValue > img1MaxValue) {img1MaxValue = img2PixelValue;}
     }
     img1NumLinhas++;
     img2NumLinhas++;
   }
 
-  img1->maxval = (int)img1MaxValue;
+  int maxValue = 0;
+  for(int i = 0; i < img1->width * img1->height; i++)
+  {
+    if (img1->pixel[i] > maxValue) {maxValue = img1->pixel[i];}
+  }
+  img1->maxval = maxValue;
 }
 
 
@@ -1125,11 +1137,11 @@ void ImageBlur(Image img, int dx, int dy) { ///
 
 
 
-
+/*
 void main()
 {
-  Image myImg = ImageLoad("blend.pgm");
-  Image myImg2 = ImageLoad("test/blend.pgm");
+  //Image myImg = ImageLoad("test/original.pgm");
+  //Image myImg2 = ImageLoad("test/blend.pgm");
   //ImageSave(myImg, "deleteMe3.pgm");
 
   //uint8_t min;
@@ -1165,17 +1177,25 @@ void main()
   //ImageSave(myImg, "myTests\\pasteImage.pgm");
 
   //Image myImg2 = ImageLoad("test/small.pgm");
-  //ImageBlend(myImg, 100, 100, myImg2, 0.330);
-  //ImageSave(myImg, "myTests\\blendImage.pgm");
+  //ImageBlend(myImg, 100, 100, myImg2, 0.33);
+  //ImageSave(myImg, "blendedImage.pgm");
 
-  int pixel = 0;
-  for (int i = 0; i < sizeof(uint8)*myImg->width*myImg->height; i++)
-  {
-    if (myImg->pixel[i] != myImg2->pixel[i])
-    {
-      printf("Index = %d\nValueOfImg1 = %d\nValueOfImg2 = %d\n", i, myImg->pixel[i], myImg2->pixel[i]);
-      pixel = i;
-    }
-  }
+  //int pixel = 0;
+  //for (int i = 0; i < sizeof(uint8)*myImg->width*myImg->height; i++)
+  //{
+  //  if (myImg->pixel[i] != myImg2->pixel[i])
+  //  {
+  //    printf("Index = %d\nValueOfImg1 = %d\nValueOfImg2 = %d\n\n", i, myImg->pixel[i], myImg2->pixel[i]);
+  //    pixel = i;
+  //  }
+  //}
+  //
+  //for (int x = 0; x < 300; x++)
+  //{
+  //  for (int y = 0; y < 300; y++)
+  //  {
+  //    if (G(myImg2, x, y) == pixel) {printf_s("Coordinates: (%d,%d)\n", x, y);}
+  //  }
+  //}
 
-}
+}*/
