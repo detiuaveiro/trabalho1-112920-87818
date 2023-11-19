@@ -84,10 +84,8 @@ Image ImageCreate(int width, int height, uint8 maxval)
 	assert (0 < maxval && maxval <= PixMax);
 
 	// Declarações & Instanciações:
-	Image myImg = NULL;
 
-	// Alocação de Memória para a Estrutura:
-	//Image myImg = (Image)malloc(sizeof(struct image));
+	Image myImg = (Image)malloc(sizeof(struct image));
 	if (myImg == NULL) {errCause ="The system cannot allocate memory for the new black image "; errsave = 12; return NULL;}
 	
 	// Atribuição de Valores aos Membros da Estrutura:
@@ -106,7 +104,6 @@ void ImageDestroy(Image* imgp)
 {
 	// Precondições:
 	assert (imgp != NULL);
-	errno = 6;
 	assert (*imgp != NULL);
 
 	// Libertação da Memória do Array 1D da Imagem:
@@ -129,6 +126,13 @@ void ImageDestroy(Image* imgp)
 
 
 // Funções para Leitura e Escrita de Imagens do Formato .PGM (Tipo P2):
+static int skipComments(FILE* f) // Função Auxiliar by JMR.
+{
+	char c;
+	int i = 0;
+	while (fscanf(f, "#%*[^\n]%c", &c) == 1 && c == '\n') {i++;}
+	return i;
+} 
 Image ImageLoad(const char* filename) /* by JMR */
 {
 	// Declarações & Instanciações:
@@ -189,7 +193,6 @@ int ImageSave(Image img, const char* filename) /* by JMR */
 	// Return:
 	return success;
 }
-static int skipComments(FILE* f) { char c; int i = 0; while (fscanf(f, "#%*[^\n]%c", &c) == 1 && c == '\n') {i++;} return i; } // Função Auxiliar by JMR.
 
 
 
@@ -356,6 +359,7 @@ void ImageSetMaxValue(Image img)
 
 
 
+
 // Algoritmos de Processamento de Imagens ao Nível Geométrico:
 Image ImageRotate(Image img)
 {
@@ -417,7 +421,6 @@ Image ImageCrop(Image img, int x, int y, int w, int h)
 	int numLinhas = y;
 	uint8_t pixelValue = 0;
 	int index = 0;
-	int maxValue = 0;
 
 	// Processamento:
 	while (numLinhas < y+h)
@@ -446,7 +449,6 @@ Image ImageCrop(Image img, int x, int y, int w, int h)
 
 
 
-
 // Algoritmos de Processamento de Duas Imagens (uma sobre a outra):
 void ImagePaste(Image img1, int x, int y, Image img2)
 {
@@ -459,7 +461,6 @@ void ImagePaste(Image img1, int x, int y, Image img2)
 	int img1NumLinhas = y;
 	int img2NumLinhas = 0;
 	uint8_t img2PixelValue = 0;
-	int maxValue = 0;
 
 	// Processamento:
 	while (img1NumLinhas < y+img2->height)
@@ -487,7 +488,6 @@ void ImageBlend(Image img1, int x, int y, Image img2, double alpha)
 	int img2NumLinhas = 0;
 	uint8 img1PixelValue = 0;
 	uint8 img2PixelValue = 0;
-	int maxValue = 0;
 
 	// Processamento:
 	while (img1NumLinhas < y+img2->height)
@@ -514,39 +514,105 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2)
 	assert (img1 != NULL);
 	assert (img2 != NULL);
 	assert (ImageValidPos(img1, x, y));
-
-	// Declarações & Instanciações:
-
-
+	if (!ImageValidRect(img1, x, y, img2->width, img2->height)) { return 0; }
+	
 	// Processamento:
-
-	ImageSetMaxValue(img1);
+	for (int yRaster = 0; yRaster < img2->height; yRaster++)
+	{
+		for (int xRaster = 0; xRaster < img2->width; xRaster++)
+		{
+			if (ImageGetPixel(img1, xRaster + x, yRaster + y) != ImageGetPixel(img2, xRaster, yRaster)) { return 0; }
+		}
+	}
 
 	// Return:
-	return 0;
+	return 1;
 }
 int ImageLocateSubImage(Image img1, int* px, int* py, Image img2)
 {
 	// Precondições:
 	assert (img1 != NULL);
 	assert (img2 != NULL);
-
+	
 	// Declarações & Instanciações:
-
+	int xCounter = 0;
+	int wCounter = 0;
+	int pxTemp = 0;
+	int pyTemp = 0;
+	int flag = 0;
 
 	// Processamento:
-
-	ImageSetMaxValue(img1);
+	for (int yRaster = 0; yRaster < img1->height; yRaster++)
+	{
+		for (int xRaster = 0; xRaster < img1->width; xRaster++)
+		{
+			if (ImageGetPixel(img1, xRaster, yRaster) == ImageGetPixel(img2, xCounter, 0) && wCounter != (img2->width-1))
+			{
+				if (wCounter == 0) {pxTemp = xRaster; pyTemp = yRaster;}
+				xCounter++; wCounter++;
+			}
+			else if (wCounter == (img2->width-1))
+			{
+				flag = ImageMatchSubImage(img1, pxTemp, pyTemp, img2);
+				if (flag == 1) {break;}
+				xCounter = 0;
+				wCounter = 0;
+				pxTemp = 0;
+				pyTemp = 0;
+			}
+			else if (wCounter != 0) {xCounter = 0; wCounter = 0; pxTemp = 0; pyTemp = 0;}
+		}
+		if (flag == 1) {break;}
+		else if (img2->height > (img1->height - yRaster)) {break;}
+	}
 
 	// Return:
+	if (flag == 1) {*px = pxTemp; *py = pyTemp; return 1;}
 	return 0;
 }
 void ImageBlur(Image img, int dx, int dy)
 {
 	// Precondições:
+	assert(img != NULL);
+	assert(dx > 0);
+	assert(dy > 0);
+
 	// Declarações & Instanciações:
+	Image imgTemp = ImageCreate(img->width, img->height, img->maxval);
+	assert(imgTemp!=NULL);
+	for (int i = 0; i < img->width * img->height; i++) {imgTemp->pixel[i] = img->pixel[i];}
+	double med = 0;
+	double sum = 0;
+	double cnt = 0;
+	
 	// Processamento:
+	for (int yRaster = 0; yRaster < img->height; yRaster++)
+	{
+		for (int xRaster = 0; xRaster < img->width; xRaster++)
+		{
+			// Sum Dos Pixels:
+			for (int yPixel = -dy; yPixel <= dy; yPixel++)
+			{
+				for (int xPixel = -dx; xPixel <= dx; xPixel++)
+				{
+					if (ImageValidPos(imgTemp, xRaster+xPixel, yRaster+yPixel)) { sum += (double) ImageGetPixel(imgTemp, xRaster+xPixel, yRaster+yPixel); cnt++;}
+				}
+			}
+
+			// Média:
+			med = (sum / cnt) + 0.5;
+
+			// Substituição do Pixel:
+			ImageSetPixel(img, xRaster, yRaster, (uint8) med);
+
+			// Reset dos Valores:
+			med = 0;
+			sum = 0;
+			cnt = 0;
+		}
+	}
 }
+
 
 
 
@@ -559,6 +625,7 @@ void ImageBlur(Image img, int dx, int dy)
 
 
 // TestBench da Equipa: (deve estar comentada)
+/*
 void main()
 {
 	Image myImg = ImageLoad("test/original.pgm");
@@ -593,14 +660,17 @@ void main()
 	//Image newImg3 = ImageCrop(myImg, 1, 1, 1400, 1000);
 	//ImageSave(newImg3, "myTests\\cropImage.pgm");
 
-	//Image myImg2 = ImageLoad("myTests\\negativeImageCropped.pgm");
+	//Image myImg2 = ImageLoad("test/small.pgm");
 	//ImagePaste(myImg, 100, 100, myImg2);
-	//ImageSave(myImg, "myTests\\pasteImage.pgm");
+	//ImageSave(myImg, "pasteImage.pgm");
 
 	//Image myImg2 = ImageLoad("test/small.pgm");
 	//ImageBlend(myImg, 100, 100, myImg2, 0.33);
 	//ImageSave(myImg, "blendedImage.pgm");
 
+	//Image myImg2 = ImageLoad("blur.pgm");
+	ImageBlur(myImg,7,7);
+	//Image myImg2 = ImageLoad("test/blur.pgm");
 	//int pixel = 0;
 	//for (int i = 0; i < sizeof(uint8)*myImg->width*myImg->height; i++)
 	//{
@@ -610,7 +680,7 @@ void main()
 	//		pixel = i;
 	//	}
 	//}
-	//
+	
 	//for (int x = 0; x < 300; x++)
 	//{
 	//	for (int y = 0; y < 300; y++)
@@ -619,4 +689,13 @@ void main()
 	//	}
 	//}
 
-}
+	//Image myImg2 = ImageLoad("test/small.pgm");
+	//printf_s("Result = %d\n", ImageMatchSubImage(myImg,100,100,myImg2));
+
+	//Image myImg2 = ImageLoad("test/small.pgm");
+	//int pxTemp = 0;
+	//int pyTemp = 0;
+	//int* px = &pxTemp;
+	//int* py = &pyTemp;
+	//printf_s("Result: %d\t(%d,%d)", ImageLocateSubImage(myImg, px, py, myImg2), *px, *py);
+}*/
