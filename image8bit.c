@@ -5,11 +5,12 @@
 
 	Data: 24.11.2023
 
-	Nota: Para os comentários originalmente escritos pelo Professor acerca das funções, ver o ficheiro de header correspondente.
+	Nota: Para ver a definição de cada função (descrição, pré-condições, pós-condições, etc.), passar o cursor por cima do nome da respetiva função.
 */
 
 
 // Libraries:
+
 #include "image8bit.h"
 #include "instrumentation.h"
 #include <assert.h>
@@ -20,10 +21,14 @@
 
 
 // Directives & Macros:
-#define PIXMEM InstrCount[0]
+
+#define PIXMEM InstrCount[0]		// Número de Acessos a Pixels.
+#define VALCOMP InstrCount[1]		// Número de Comparações entre Pixels.
+#define FORCNT InstrCount[2]		// Número de Ciclos de um For.
 
 
 // Declarações & Instanciações [Globais]:
+
 struct image { int width; int height; int maxval; uint8* pixel;};	// Estrutura Base do Programa (Armazena Graymap de 8 Bits).
 const uint8 PixMax = 255; 											// Valor Máximo do Pixel.
 static int errsave = 0; 											// Variável para Preservar o "errno" temporariamente.
@@ -41,8 +46,16 @@ static char* errCause;												// Variável para Registar a Causa do Erro.
 
 
 // Funções Para Gestão de Erros:
+
 char* ImageErrMsg() { return errCause; }
-static int check(int condition, const char* failmsg) { errCause = (char*)(condition ? "" : failmsg); return condition; }
+static int check(int condition, const char* failmsg)
+{
+	errCause = (char*)(condition ? "" : failmsg);
+	return condition;
+} 
+
+
+
 
 
 
@@ -56,12 +69,13 @@ static int check(int condition, const char* failmsg) { errCause = (char*)(condit
 
 
 // Função Para Calibração dos Intrumentos de Medição de Complexidade Computacional:
+
 void ImageInit(void)
 {
 	InstrCalibrate();
-	InstrName[0] = "pixmem";	// Conta o número de Acesso ao Array de Pixels.
-	// Name other counters here...
-	
+	InstrName[0] = "pixmem";		// Número de Acessos a Pixels.
+	InstrName[1] = "valcomp";		// Número de Comparações entre Pixels.
+	InstrName[2] = "forcnt";		// Número de Ciclos de um For.
 }
 
 
@@ -76,6 +90,7 @@ void ImageInit(void)
 
 
 // Funções Construtoras & Destrutoras da Estrutura:
+
 Image ImageCreate(int width, int height, uint8 maxval)
 {
 	// Precondições:
@@ -84,10 +99,9 @@ Image ImageCreate(int width, int height, uint8 maxval)
 	assert (0 < maxval && maxval <= PixMax);
 
 	// Declarações & Instanciações:
-
 	Image myImg = (Image)malloc(sizeof(struct image));
-	if (myImg == NULL) {errCause ="The system cannot allocate memory for the new black image "; errsave = 12; return NULL;}
-	
+	if (myImg == NULL) {errCause ="The System Cannot Allocate Memory for the new Black Image."; errsave = 12; return NULL;}
+
 	// Atribuição de Valores aos Membros da Estrutura:
 	myImg->height = height;
 	myImg->width = width;
@@ -95,23 +109,40 @@ Image ImageCreate(int width, int height, uint8 maxval)
 
 	// Alocação de Memória para o Vetor 1D que Armazena a Imagem (2D):
 	myImg->pixel = (uint8*)malloc(sizeof(uint8)*width*height);
-	if (myImg->pixel == NULL) {errCause ="The system cannot allocate memory for a raster scan in a new blank image "; errsave = 12; free(myImg); return NULL;}
+	if (myImg->pixel == NULL)
+	{
+		errCause ="The System Cannot Allocate Memory for a Raster Scan in a new Blank Image."; 
+		errsave = errno; //12
+		free(myImg); // Liberta a Memória Alocada Anteriormente.
+		return NULL;
+	}
+
+	
 	
 	// Return:
 	return myImg;
 }
+
 void ImageDestroy(Image* imgp)
 {
 	// Precondições:
 	assert (imgp != NULL);
-	assert (*imgp != NULL);
+	//assert (*imgp != NULL);
 
-	// Libertação da Memória do Array 1D da Imagem:
-	free((*imgp)->pixel);
+	//Preserva errno/errCausa global
+	int success = check(*imgp != NULL, "Invalid Pointer!" );
+	if (success) {
+		// Libertação da Memória do Array 1D da Imagem:
+		free((*imgp)->pixel);
 
-	// Libertação da Memória da Estrutura:
-	free((*imgp));
-	*imgp = NULL;
+		// Libertação da Memória da Estrutura:
+		free((*imgp));
+		*imgp = NULL;	
+	}
+	else
+	{
+		errsave = errno;
+	}
 }
 
 
@@ -144,20 +175,20 @@ Image ImageLoad(const char* filename) /* by JMR */
 
 	// Processamento:
 	int success = 
-	check( (f = fopen(filename, "rb")) != NULL, "Open failed" ) &&
+	check( (f = fopen(filename, "rb")) != NULL, "Open Failed!" ) &&
 	// Parse PGM header
-	check( fscanf(f, "P%c ", &c) == 1 && c == '5' , "Invalid file format" ) &&
+	check( fscanf(f, "P%c ", &c) == 1 && c == '5' , "Invalid File Format!" ) &&
 	skipComments(f) >= 0 &&
-	check( fscanf(f, "%d ", &w) == 1 && w >= 0 , "Invalid width" ) &&
+	check( fscanf(f, "%d ", &w) == 1 && w >= 0 , "Invalid Width!" ) &&
 	skipComments(f) >= 0 &&
-	check( fscanf(f, "%d ", &h) == 1 && h >= 0 , "Invalid height" ) &&
+	check( fscanf(f, "%d ", &h) == 1 && h >= 0 , "Invalid Height!" ) &&
 	skipComments(f) >= 0 &&
-	check( fscanf(f, "%d", &maxval) == 1 && 0 < maxval && maxval <= (int)PixMax , "Invalid maxval" ) &&
-	check( fscanf(f, "%c", &c) == 1 && isspace(c) , "Whitespace expected" ) &&
+	check( fscanf(f, "%d", &maxval) == 1 && 0 < maxval && maxval <= (int)PixMax , "Invalid maxval!" ) &&
+	check( fscanf(f, "%c", &c) == 1 && isspace(c) , "Whitespace Expected!" ) &&
 	// Allocate image
 	(img = ImageCreate(w, h, (uint8)maxval)) != NULL &&
 	// Read pixels
-	check( fread(img->pixel, sizeof(uint8), w*h, f) == w*h , "Reading pixels" );
+	check( fread(img->pixel, sizeof(uint8), w*h, f) == w*h , "Reading Pixels!" );
 	PIXMEM += (unsigned long)(w*h);	// count pixel memory accesses
 
 	// Cleanup:
@@ -182,9 +213,9 @@ int ImageSave(Image img, const char* filename) /* by JMR */
 
 	// Processamento:
 	int success =
-	check( (f = fopen(filename, "wb")) != NULL, "Open failed" ) &&
-	check( fprintf(f, "P5\n%d %d\n%u\n", w, h, maxval) > 0, "Writing header failed" ) &&
-	check( fwrite(img->pixel, sizeof(uint8), w*h, f) == w*h, "Writing pixels failed" ); 
+	check( (f = fopen(filename, "wb")) != NULL, "Open Failed!" ) &&
+	check( fprintf(f, "P5\n%d %d\n%u\n", w, h, maxval) > 0, "Writing Header Failed!" ) &&
+	check( fwrite(img->pixel, sizeof(uint8), w*h, f) == w*h, "Writing Pixels Failed!" ); 
 	PIXMEM += (unsigned long)(w*h);	// count pixel memory accesses
 
 	// Cleanup:
@@ -206,9 +237,30 @@ int ImageSave(Image img, const char* filename) /* by JMR */
 
 
 // Getters & Setters da Estrutura:
-int ImageWidth(Image img) { assert (img != NULL); return img->width; }
-int ImageHeight(Image img) { assert (img != NULL); return img->height; }
-int ImageMaxval(Image img) { assert (img != NULL); return img->maxval; }
+int ImageWidth(Image img)
+{
+	// Precondições:
+	assert (img != NULL);
+
+	// Return:
+	return img->width;
+}
+int ImageHeight(Image img)
+{
+	// Precondições:
+	assert (img != NULL);
+
+	// Return:
+	return img->height;
+}
+int ImageMaxval(Image img)
+{
+	// Precondições:
+	assert (img != NULL);
+
+	// Return:
+	return img->maxval;
+}
 void ImageStats(Image img, uint8* min, uint8* max)
 {
 	// Precondições:
@@ -239,7 +291,10 @@ void ImageStats(Image img, uint8* min, uint8* max)
 // Funções Auxiliares aos Algoritmos de Processamento de Imagem Posteriores:
 int ImageValidPos(Image img, int x, int y)
 {
+	// Precondições:
 	assert (img != NULL);
+
+	// Return:
 	return (0 <= x && x < img->width) && (0 <= y && y < img->height);
 }
 int ImageValidRect(Image img, int x, int y, int w, int h)
@@ -249,12 +304,12 @@ int ImageValidRect(Image img, int x, int y, int w, int h)
 
 	// Verificação de ImageValidPos():
 	int validPos = ImageValidPos(img, x, y);
-	if (validPos == 0) {perror("InvalidImagePosition"); return 0;}
+	if (validPos == 0) {return 0;}
 
 	// Verifica se a Área do Retângulo Está Dentoo da img:
 	int largura = x + w;
 	int altura = y + h;
-	if (!ImageValidPos(img, largura, altura)) {perror("InvalidRectArea"); return 0;}
+	if (!ImageValidPos(img, largura, altura)) {return 0;}
 
 	// Return:
 	return 1;
@@ -268,16 +323,26 @@ static inline int G(Image img, int x, int y)
 }
 uint8 ImageGetPixel(Image img, int x, int y)
 {
+	// Precondições:
 	assert (img != NULL);
 	assert (ImageValidPos(img, x, y));
+
+	// For Performance Metrics:
 	PIXMEM += 1;
+
+	// Return:
 	return img->pixel[G(img, x, y)];
 }
 void ImageSetPixel(Image img, int x, int y, uint8 level)
 {
+	// Precondições:
 	assert (img != NULL);
 	assert (ImageValidPos(img, x, y));
+
+	// For Performance Metrics:
 	PIXMEM += 1;
+
+	// Return:
 	img->pixel[G(img, x, y)] = level;
 } 
 
@@ -368,7 +433,8 @@ Image ImageRotate(Image img)
 
 	// Declarações & Instanciações:
 	Image newImg = ImageCreate(img->height, img->width, img->maxval);
-	if (newImg == NULL){ /*bla bla bla*/ return NULL;}
+	int success = check(newImg != NULL, "Failed to Allocate Memory for Rotated Image!");
+	if (!success){errsave = 12; return NULL;}
 	int heightNew = 0;
 	uint8 pixelValue = 0;
 
@@ -393,7 +459,11 @@ Image ImageMirror(Image img)
 
 	// Declarações & Instanciações:
 	Image newImg = ImageCreate(img->width, img->height, img->maxval);
-	if (newImg == NULL){ /*bla bla bla*/ return NULL;}
+	 if (!check(newImg != NULL, "Failed to Allocate Memory for Mirrored Image!"))
+	{
+		errsave = 12;
+		return NULL;
+	}
 	uint8 pixelValue = 0;
 
 	// Processamento:
@@ -417,13 +487,16 @@ Image ImageCrop(Image img, int x, int y, int w, int h)
 
 	// Declarações & Instanciações:
 	Image newImg = ImageCreate(w, h, 1);
-	if (newImg == NULL){ /*bla bla bla*/ return NULL;}
-	int numLinhas = y;
+	if (!check(newImg != NULL, "Failed to Allocate Memory for Cropped Image!"))
+	{
+		errsave = 12;
+		return NULL;
+	}
 	uint8_t pixelValue = 0;
 	int index = 0;
 
 	// Processamento:
-	while (numLinhas < y+h)
+	for (int numLinhas = y; numLinhas < y+h; numLinhas++)
 	{
 		for (int i = 0; i < w; i++)
 		{
@@ -431,7 +504,6 @@ Image ImageCrop(Image img, int x, int y, int w, int h)
 			newImg->pixel[index] = pixelValue;
 			index++;
 		}
-		numLinhas++;
 	}
 	ImageSetMaxValue(newImg);
 
@@ -458,20 +530,16 @@ void ImagePaste(Image img1, int x, int y, Image img2)
 	assert (ImageValidRect(img1, x, y, img2->width, img2->height));
 
 	// Declarações & Instanciações:
-	int img1NumLinhas = y;
-	int img2NumLinhas = 0;
 	uint8_t img2PixelValue = 0;
 
 	// Processamento:
-	while (img1NumLinhas < y+img2->height)
+	for (int img1NumLinhas = y, img2NumLinhas = 0; img1NumLinhas < y+img2->height; img1NumLinhas++, img2NumLinhas++)
 	{
 		for (int i = 0; i < img2->width; i++)
 		{
 			img2PixelValue = ImageGetPixel(img2, i, img2NumLinhas);
 			ImageSetPixel(img1, x+i, img1NumLinhas, img2PixelValue);
 		}
-		img1NumLinhas++;
-		img2NumLinhas++;
 	}
 	ImageSetMaxValue(img1);
 }
@@ -484,13 +552,11 @@ void ImageBlend(Image img1, int x, int y, Image img2, double alpha)
 
 	// Declarações & Instanciações:
 	double blend;
-	int img1NumLinhas = y;
-	int img2NumLinhas = 0;
 	uint8 img1PixelValue = 0;
 	uint8 img2PixelValue = 0;
 
 	// Processamento:
-	while (img1NumLinhas < y+img2->height)
+	for (int img1NumLinhas = y, img2NumLinhas = 0; img1NumLinhas < y+img2->height; img1NumLinhas++, img2NumLinhas++)
 	{
 		for (int i = 0; i < img2->width; i++)
 		{
@@ -503,8 +569,6 @@ void ImageBlend(Image img1, int x, int y, Image img2, double alpha)
 			else if (blend < 0.0) {ImageSetPixel(img1, x+i, img1NumLinhas, (uint8)0);}
 			else {ImageSetPixel(img1, x+i, img1NumLinhas, (uint8) blend);}
 		}
-		img1NumLinhas++;
-		img2NumLinhas++;
 	}
 	ImageSetMaxValue(img1);
 }
@@ -521,7 +585,7 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2)
 	{
 		for (int xRaster = 0; xRaster < img2->width; xRaster++)
 		{
-			if (ImageGetPixel(img1, xRaster + x, yRaster + y) != ImageGetPixel(img2, xRaster, yRaster)) { return 0; }
+			if (ImageGetPixel(img1, xRaster + x, yRaster + y) != ImageGetPixel(img2, xRaster, yRaster)) { VALCOMP += 1; return 0; }
 		}
 	}
 
@@ -548,6 +612,7 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2)
 		{
 			if (ImageGetPixel(img1, xRaster, yRaster) == ImageGetPixel(img2, xCounter, 0) && wCounter != (img2->width-1))
 			{
+				VALCOMP += 1; // For Performance Metrics.
 				if (wCounter == 0) {pxTemp = xRaster; pyTemp = yRaster;}
 				xCounter++; wCounter++;
 			}
@@ -561,9 +626,15 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2)
 				pyTemp = 0;
 			}
 			else if (wCounter != 0) {xCounter = 0; wCounter = 0; pxTemp = 0; pyTemp = 0;}
+
+			// For Performance Metrics:
+			FORCNT += 1;
 		}
 		if (flag == 1) {break;}
 		else if (img2->height > (img1->height - yRaster)) {break;}
+
+		// For Performance Metrics:
+		FORCNT += 1;
 	}
 
 	// Return:
@@ -579,7 +650,7 @@ void ImageBlur(Image img, int dx, int dy)
 
 	// Declarações & Instanciações:
 	Image imgTemp = ImageCreate(img->width, img->height, img->maxval);
-	assert(imgTemp!=NULL);
+	assert(imgTemp!= NULL);
 	for (int i = 0; i < img->width * img->height; i++) {imgTemp->pixel[i] = img->pixel[i];}
 	double med = 0;
 	double sum = 0;
@@ -593,8 +664,10 @@ void ImageBlur(Image img, int dx, int dy)
 			// Sum Dos Pixels:
 			for (int yPixel = -dy; yPixel <= dy; yPixel++)
 			{
+				FORCNT += 1; // For Performance Metrics.
 				for (int xPixel = -dx; xPixel <= dx; xPixel++)
 				{
+					FORCNT += 1; // For Performance Metrics.
 					if (ImageValidPos(imgTemp, xRaster+xPixel, yRaster+yPixel)) { sum += (double) ImageGetPixel(imgTemp, xRaster+xPixel, yRaster+yPixel); cnt++;}
 				}
 			}
@@ -609,7 +682,13 @@ void ImageBlur(Image img, int dx, int dy)
 			med = 0;
 			sum = 0;
 			cnt = 0;
+
+			// For Performance Metrics:
+			FORCNT += 1;
 		}
+		
+		// For Performance Metrics:
+		FORCNT += 1;
 	}
 }
 
@@ -625,6 +704,7 @@ void ImageBlur(Image img, int dx, int dy)
 
 
 // TestBench da Equipa: (deve estar comentada)
+// Nota: Também foram usadas como testbenches as entradas do 'imageTest' e do 'imageTool'.
 /*
 void main()
 {

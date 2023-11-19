@@ -115,7 +115,7 @@ void InstrPrint(void) { ///
   // compute time in calibrated time units:
   double caltime = time / InstrCTU;
 
-  printf("#%14.15s\t%15.15s", "time", "caltime");
+  printf("\n#%14.15s\t%15.15s", "time", "caltime");
   for (int i = 0; i < NUMCOUNTERS; i++)
     if (InstrName[i] != NULL)
       printf("\t%15.15s", InstrName[i]);

@@ -26,11 +26,19 @@ int main(int argc, char* argv[]) {
 
   ImageInit();
   
-  printf("# LOAD image");
+  printf("# LOAD Image 1");
   InstrReset(); // to reset instrumentation
-  Image img1 = ImageLoad(argv[1]);
+  Image img1 = ImageLoad("test/paste.pgm");
   if (img1 == NULL) {
-    error(2, errno, "Loading %s: %s", argv[1], ImageErrMsg());
+    error(2, errno, "Loading %s: %s", "test/paste.pgm", ImageErrMsg());
+  }
+  InstrPrint(); // to print instrumentation
+
+  printf("# LOAD Image 2");
+  InstrReset(); // to reset instrumentation
+  Image img2 = ImageLoad("test/small.pgm");
+  if (img2 == NULL) {
+    error(2, errno, "Loading %s: %s", "test/small.pgm", ImageErrMsg());
   }
   InstrPrint(); // to print instrumentation
 
@@ -38,18 +46,37 @@ int main(int argc, char* argv[]) {
   // the appropriate lines.
 
   //img2 = ImageCrop(img1, ImageWidth(img1)/4, ImageHeight(img1)/4, ImageWidth(img1)/2, ImageHeight(img1)/2);
-  Image img2 = ImageRotate(img1);
-  if (img2 == NULL) {
-    error(2, errno, "Rotating img2: %s", ImageErrMsg());
+  //Image img2 = ImageRotate(img1);
+
+  printf("# LOCATE image");
+  InstrReset(); // to reset instrumentation
+  int pxTemp = 0;
+	int pyTemp = 0;
+	int* px = &pxTemp;
+	int* py = &pyTemp;
+  int success = ImageLocateSubImage(img1,px,py,img2);
+  if (success == 0) {
+    error(2, errno, "LOCATE img: %s", ImageErrMsg());
   }
+  InstrPrint(); // to print instrumentation
+
+  printf("# BLUR image");
+  InstrReset(); // to reset instrumentation
+  ImageBlur(img1,2,2);
+  if (img1 == NULL) {
+    error(2, errno, "Blur img: %s", ImageErrMsg());
+  }
+  InstrPrint(); // to print instrumentation
+
+  // gcc imageTest.c error.c instrumentation.c image8bit.c -o imageTest.exe
 
   //ImageNegative(img2);
   //ImageThreshold(img2, 100);
-  ImageBrighten(img2, 1.3);
+  //ImageBrighten(img2, 1.3);
 
-  if (ImageSave(img2, argv[2]) == 0) {
-    error(2, errno, "%s: %s", argv[2], ImageErrMsg());
-  }
+  //if (ImageSave(img2, argv[2]) == 0) {
+  //  error(2, errno, "%s: %s", argv[2], ImageErrMsg());
+  //}
 
   ImageDestroy(&img1);
   ImageDestroy(&img2);
