@@ -48,14 +48,12 @@ static char* errCause;												// Variável para Registar a Causa do Erro.
 // Funções Para Gestão de Erros:
 
 char* ImageErrMsg() { return errCause; }
+
 static int check(int condition, const char* failmsg)
 {
 	errCause = (char*)(condition ? "" : failmsg);
 	return condition;
 } 
-
-
-
 
 
 
@@ -237,6 +235,7 @@ int ImageSave(Image img, const char* filename) /* by JMR */
 
 
 // Getters & Setters da Estrutura:
+
 int ImageWidth(Image img)
 {
 	// Precondições:
@@ -245,6 +244,7 @@ int ImageWidth(Image img)
 	// Return:
 	return img->width;
 }
+
 int ImageHeight(Image img)
 {
 	// Precondições:
@@ -253,6 +253,7 @@ int ImageHeight(Image img)
 	// Return:
 	return img->height;
 }
+
 int ImageMaxval(Image img)
 {
 	// Precondições:
@@ -261,6 +262,7 @@ int ImageMaxval(Image img)
 	// Return:
 	return img->maxval;
 }
+
 void ImageStats(Image img, uint8* min, uint8* max)
 {
 	// Precondições:
@@ -289,6 +291,7 @@ void ImageStats(Image img, uint8* min, uint8* max)
 
 
 // Funções Auxiliares aos Algoritmos de Processamento de Imagem Posteriores:
+
 int ImageValidPos(Image img, int x, int y)
 {
 	// Precondições:
@@ -297,6 +300,7 @@ int ImageValidPos(Image img, int x, int y)
 	// Return:
 	return (0 <= x && x < img->width) && (0 <= y && y < img->height);
 }
+
 int ImageValidRect(Image img, int x, int y, int w, int h)
 {
 	// Precondições:
@@ -314,6 +318,7 @@ int ImageValidRect(Image img, int x, int y, int w, int h)
 	// Return:
 	return 1;
 }
+
 static inline int G(Image img, int x, int y)
 {
 	int index;
@@ -321,6 +326,7 @@ static inline int G(Image img, int x, int y)
 	assert (0 <= index && index < img->width*img->height);
 	return index;
 }
+
 uint8 ImageGetPixel(Image img, int x, int y)
 {
 	// Precondições:
@@ -333,6 +339,7 @@ uint8 ImageGetPixel(Image img, int x, int y)
 	// Return:
 	return img->pixel[G(img, x, y)];
 }
+
 void ImageSetPixel(Image img, int x, int y, uint8 level)
 {
 	// Precondições:
@@ -369,6 +376,7 @@ void ImageNegative(Image img)
 		img->pixel[i] = PixMax - img->pixel[i];
 	}
 }
+
 void ImageThreshold(Image img, uint8 thr)
 {
 	// Precondições:
@@ -381,6 +389,7 @@ void ImageThreshold(Image img, uint8 thr)
 		else { img->pixel[i] = PixMax; }
 	}
 }
+
 void ImageBrighten(Image img, double factor)
 {
 	// Precondições:
@@ -399,6 +408,7 @@ void ImageBrighten(Image img, double factor)
 		else {img->pixel[i] = (uint8)n;}
 	}
 }
+
 void ImageSetMaxValue(Image img)
 {
 	// Declarações & Instanciações:
@@ -426,6 +436,7 @@ void ImageSetMaxValue(Image img)
 
 
 // Algoritmos de Processamento de Imagens ao Nível Geométrico:
+
 Image ImageRotate(Image img)
 {
 	// Precondições:
@@ -452,6 +463,7 @@ Image ImageRotate(Image img)
 	// Return:
 	return newImg;
 }
+
 Image ImageMirror(Image img)
 {
 	// Precondições:
@@ -479,6 +491,7 @@ Image ImageMirror(Image img)
 	// Return:
 	return newImg;
 }
+
 Image ImageCrop(Image img, int x, int y, int w, int h)
 {
 	// Precondições:
@@ -521,7 +534,9 @@ Image ImageCrop(Image img, int x, int y, int w, int h)
 
 
 
+
 // Algoritmos de Processamento de Duas Imagens (uma sobre a outra):
+
 void ImagePaste(Image img1, int x, int y, Image img2)
 {
 	// Precondições:
@@ -543,6 +558,7 @@ void ImagePaste(Image img1, int x, int y, Image img2)
 	}
 	ImageSetMaxValue(img1);
 }
+
 void ImageBlend(Image img1, int x, int y, Image img2, double alpha)
 {
 	// Precondições:
@@ -572,6 +588,7 @@ void ImageBlend(Image img1, int x, int y, Image img2, double alpha)
 	}
 	ImageSetMaxValue(img1);
 }
+
 int ImageMatchSubImage(Image img1, int x, int y, Image img2)
 {
 	// Precondições:
@@ -585,13 +602,15 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2)
 	{
 		for (int xRaster = 0; xRaster < img2->width; xRaster++)
 		{
-			if (ImageGetPixel(img1, xRaster + x, yRaster + y) != ImageGetPixel(img2, xRaster, yRaster)) { VALCOMP += 1; return 0; }
+			if (ImageGetPixel(img1, xRaster + x, yRaster + y) != ImageGetPixel(img2, xRaster, yRaster)) { return 0; }
+			VALCOMP += 1;
 		}
 	}
 
 	// Return:
 	return 1;
 }
+
 int ImageLocateSubImage(Image img1, int* px, int* py, Image img2)
 {
 	// Precondições:
@@ -606,13 +625,12 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2)
 	int flag = 0;
 
 	// Processamento:
-	for (int yRaster = 0; yRaster < img1->height; yRaster++)
+	for (int yRaster = 0; img2->height < (img1->height - yRaster); yRaster++)
 	{
 		for (int xRaster = 0; xRaster < img1->width; xRaster++)
 		{
 			if (ImageGetPixel(img1, xRaster, yRaster) == ImageGetPixel(img2, xCounter, 0) && wCounter != (img2->width-1))
 			{
-				VALCOMP += 1; // For Performance Metrics.
 				if (wCounter == 0) {pxTemp = xRaster; pyTemp = yRaster;}
 				xCounter++; wCounter++;
 			}
@@ -629,9 +647,9 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2)
 
 			// For Performance Metrics:
 			FORCNT += 1;
+			VALCOMP += 1;
 		}
 		if (flag == 1) {break;}
-		else if (img2->height > (img1->height - yRaster)) {break;}
 
 		// For Performance Metrics:
 		FORCNT += 1;
@@ -641,6 +659,7 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2)
 	if (flag == 1) {*px = pxTemp; *py = pyTemp; return 1;}
 	return 0;
 }
+
 void ImageBlur(Image img, int dx, int dy)
 {
 	// Precondições:
@@ -708,7 +727,8 @@ void ImageBlur(Image img, int dx, int dy)
 /*
 void main()
 {
-	Image myImg = ImageLoad("test/original.pgm");
+	//Image myImg = ImageLoad("pgm/small/tools_2_765x460.pgm");
+	//Image myImg2 = ImageLoad("test/small.pgm");
 	//Image myImg2 = ImageLoad("test/blend.pgm");
 	//ImageSave(myImg, "deleteMe3.pgm");
 
@@ -740,16 +760,19 @@ void main()
 	//Image newImg3 = ImageCrop(myImg, 1, 1, 1400, 1000);
 	//ImageSave(newImg3, "myTests\\cropImage.pgm");
 
-	//Image myImg2 = ImageLoad("test/small.pgm");
-	//ImagePaste(myImg, 100, 100, myImg2);
-	//ImageSave(myImg, "pasteImage.pgm");
+	Image myImg = ImageLoad("ComplexityTests/ImageLocateTests/Sierra.pgm");
+	Image myImg2 = ImageLoad("test/small.pgm");
+	ImagePaste(myImg, 50, 50, myImg2);
+	ImageSave(myImg, "ComplexityTests/ImageLocateTests/VeryLarge/Sierra.pgm");
+
+	// cl image8bit.c instrumentation.c
 
 	//Image myImg2 = ImageLoad("test/small.pgm");
 	//ImageBlend(myImg, 100, 100, myImg2, 0.33);
 	//ImageSave(myImg, "blendedImage.pgm");
 
 	//Image myImg2 = ImageLoad("blur.pgm");
-	ImageBlur(myImg,7,7);
+	//ImageBlur(myImg,7,7);
 	//Image myImg2 = ImageLoad("test/blur.pgm");
 	//int pixel = 0;
 	//for (int i = 0; i < sizeof(uint8)*myImg->width*myImg->height; i++)

@@ -13,73 +13,37 @@
 #include <errno.h>
 #include "error.h"
 #include <stdio.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include "image8bit.h"
 #include "instrumentation.h"
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
   program_name = argv[0];
-  if (argc != 3) {
-    error(1, 0, "Usage: imageTest input.pgm output.pgm");
-  }
-
+  if (argc != 3) { error(1, 0, "Usage: imageTest input.pgm output.pgm"); }
   ImageInit();
-  
-  printf("# LOAD Image 1");
-  InstrReset(); // to reset instrumentation
-  Image img1 = ImageLoad("test/paste.pgm");
-  if (img1 == NULL) {
-    error(2, errno, "Loading %s: %s", "test/paste.pgm", ImageErrMsg());
-  }
-  InstrPrint(); // to print instrumentation
+ 
+  // cl imageTest.c image8bit.c instrumentation.c error.c
+ 
+  //Image img1 = ImageLoad("ComplexityTests/ImageLocateTests/Small/PurpleWindows.pgm");
+  //Image img2 = ImageLoad("test/small.pgm");
+  //InstrReset();
+  //int pxTemp = 0;
+	//int pyTemp = 0;
+	//int* px = &pxTemp;
+	//int* py = &pyTemp;
+  //int success = ImageLocateSubImage(img1,px,py,img2);
+  //if (success == 0) { error(2, errno, "LOCATE img: %s", ImageErrMsg()); }
+  //InstrPrint();
 
-  printf("# LOAD Image 2");
-  InstrReset(); // to reset instrumentation
-  Image img2 = ImageLoad("test/small.pgm");
-  if (img2 == NULL) {
-    error(2, errno, "Loading %s: %s", "test/small.pgm", ImageErrMsg());
-  }
-  InstrPrint(); // to print instrumentation
-
-  // Try changing the behaviour of the program by commenting/uncommenting
-  // the appropriate lines.
-
-  //img2 = ImageCrop(img1, ImageWidth(img1)/4, ImageHeight(img1)/4, ImageWidth(img1)/2, ImageHeight(img1)/2);
-  //Image img2 = ImageRotate(img1);
-
-  printf("# LOCATE image");
-  InstrReset(); // to reset instrumentation
-  int pxTemp = 0;
-	int pyTemp = 0;
-	int* px = &pxTemp;
-	int* py = &pyTemp;
-  int success = ImageLocateSubImage(img1,px,py,img2);
-  if (success == 0) {
-    error(2, errno, "LOCATE img: %s", ImageErrMsg());
-  }
-  InstrPrint(); // to print instrumentation
-
-  printf("# BLUR image");
-  InstrReset(); // to reset instrumentation
+  Image img1 = ImageLoad("ComplexityTests/ImageLocateTests/VeryLarge/MojaveDay.pgm");
+  InstrReset();
   ImageBlur(img1,2,2);
-  if (img1 == NULL) {
-    error(2, errno, "Blur img: %s", ImageErrMsg());
-  }
-  InstrPrint(); // to print instrumentation
-
-  // gcc imageTest.c error.c instrumentation.c image8bit.c -o imageTest.exe
-
-  //ImageNegative(img2);
-  //ImageThreshold(img2, 100);
-  //ImageBrighten(img2, 1.3);
-
-  //if (ImageSave(img2, argv[2]) == 0) {
-  //  error(2, errno, "%s: %s", argv[2], ImageErrMsg());
-  //}
+  InstrPrint();
 
   ImageDestroy(&img1);
-  ImageDestroy(&img2);
+  //ImageDestroy(&img2);
   return 0;
 }
-

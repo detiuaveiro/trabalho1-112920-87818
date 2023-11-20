@@ -5,6 +5,7 @@
         "errno.h": "c",
         "stdio.h": "c",
         "assert.h": "c",
-        "instrumentation.h": "c"
+        "instrumentation.h": "c",
+        "string.h": "c"
     }
 }
