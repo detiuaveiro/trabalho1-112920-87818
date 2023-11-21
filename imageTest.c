@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
  
   // cl imageTest.c image8bit.c instrumentation.c error.c
  
-  //Image img1 = ImageLoad("ComplexityTests/ImageLocateTests/Small/PurpleWindows.pgm");
+  //Image img1 = ImageLoad("ComplexityTests/ImageLocateTests/Small/art4_300x300.pgm");
   //Image img2 = ImageLoad("test/small.pgm");
   //InstrReset();
   //int pxTemp = 0;

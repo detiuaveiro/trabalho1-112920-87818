@@ -98,7 +98,7 @@ Image ImageCreate(int width, int height, uint8 maxval)
 
 	// Declarações & Instanciações:
 	Image myImg = (Image)malloc(sizeof(struct image));
-	if (myImg == NULL) {errCause ="The System Cannot Allocate Memory for the new Black Image."; errsave = 12; return NULL;}
+	if (myImg == NULL) {errCause ="The System Cannot Allocate Memory for the new Black Image."; errno = 12; return NULL;}
 
 	// Atribuição de Valores aos Membros da Estrutura:
 	myImg->height = height;
@@ -110,8 +110,9 @@ Image ImageCreate(int width, int height, uint8 maxval)
 	if (myImg->pixel == NULL)
 	{
 		errCause ="The System Cannot Allocate Memory for a Raster Scan in a new Blank Image."; 
-		errsave = errno; //12
+		errsave = errno;
 		free(myImg); // Liberta a Memória Alocada Anteriormente.
+		errno = errsave;
 		return NULL;
 	}
 
@@ -139,7 +140,7 @@ void ImageDestroy(Image* imgp)
 	}
 	else
 	{
-		errsave = errno;
+		errno = 14;
 	}
 }
 
@@ -310,7 +311,7 @@ int ImageValidRect(Image img, int x, int y, int w, int h)
 	int validPos = ImageValidPos(img, x, y);
 	if (validPos == 0) {return 0;}
 
-	// Verifica se a Área do Retângulo Está Dentoo da img:
+	// Verifica se a Área do Retângulo Está Dentro da img:
 	int largura = x + w;
 	int altura = y + h;
 	if (!ImageValidPos(img, largura, altura)) {return 0;}
@@ -445,7 +446,7 @@ Image ImageRotate(Image img)
 	// Declarações & Instanciações:
 	Image newImg = ImageCreate(img->height, img->width, img->maxval);
 	int success = check(newImg != NULL, "Failed to Allocate Memory for Rotated Image!");
-	if (!success){errsave = 12; return NULL;}
+	if (!success){errno = 12; return NULL;}
 	int heightNew = 0;
 	uint8 pixelValue = 0;
 
@@ -473,7 +474,7 @@ Image ImageMirror(Image img)
 	Image newImg = ImageCreate(img->width, img->height, img->maxval);
 	 if (!check(newImg != NULL, "Failed to Allocate Memory for Mirrored Image!"))
 	{
-		errsave = 12;
+		errno = 12;
 		return NULL;
 	}
 	uint8 pixelValue = 0;
@@ -502,7 +503,7 @@ Image ImageCrop(Image img, int x, int y, int w, int h)
 	Image newImg = ImageCreate(w, h, 1);
 	if (!check(newImg != NULL, "Failed to Allocate Memory for Cropped Image!"))
 	{
-		errsave = 12;
+		errno = 12;
 		return NULL;
 	}
 	uint8_t pixelValue = 0;
@@ -602,9 +603,14 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2)
 	{
 		for (int xRaster = 0; xRaster < img2->width; xRaster++)
 		{
+			// For Performance Metrics:
+			VALCOMP += 1; 
+			FORCNT += 1;
+
 			if (ImageGetPixel(img1, xRaster + x, yRaster + y) != ImageGetPixel(img2, xRaster, yRaster)) { return 0; }
-			VALCOMP += 1;
 		}
+		// For Performance Metrics:
+		FORCNT += 1;
 	}
 
 	// Return:
@@ -617,50 +623,24 @@ int ImageLocateSubImage(Image img1, int* px, int* py, Image img2)
 	assert (img1 != NULL);
 	assert (img2 != NULL);
 	
-	// Declarações & Instanciações:
-	int xCounter = 0;
-	int wCounter = 0;
-	int pxTemp = 0;
-	int pyTemp = 0;
-	int flag = 0;
-
 	// Processamento:
-	for (int yRaster = 0; img2->height < (img1->height - yRaster); yRaster++)
+	for (int y = 0; img2->height < (img1->height - y); y++)
 	{
-		for (int xRaster = 0; xRaster < img1->width; xRaster++)
+		for (int x = 0; img2->width < (img1->width - x); x++)
 		{
-			if (ImageGetPixel(img1, xRaster, yRaster) == ImageGetPixel(img2, xCounter, 0) && wCounter != (img2->width-1))
-			{
-				if (wCounter == 0) {pxTemp = xRaster; pyTemp = yRaster;}
-				xCounter++; wCounter++;
-			}
-			else if (wCounter == (img2->width-1))
-			{
-				flag = ImageMatchSubImage(img1, pxTemp, pyTemp, img2);
-				if (flag == 1) {break;}
-				xCounter = 0;
-				wCounter = 0;
-				pxTemp = 0;
-				pyTemp = 0;
-			}
-			else if (wCounter != 0) {xCounter = 0; wCounter = 0; pxTemp = 0; pyTemp = 0;}
-
-			// For Performance Metrics:
-			FORCNT += 1;
-			VALCOMP += 1;
+			FORCNT += 1; // For Performance Metrics.
+			if (ImageMatchSubImage(img1, x, y, img2) == 1) { return 1; };
 		}
-		if (flag == 1) {break;}
 
 		// For Performance Metrics:
 		FORCNT += 1;
 	}
 
 	// Return:
-	if (flag == 1) {*px = pxTemp; *py = pyTemp; return 1;}
 	return 0;
 }
 
-void ImageBlur(Image img, int dx, int dy)
+void ImageBlur_NotOptimized(Image img, int dx, int dy)
 {
 	// Precondições:
 	assert(img != NULL);
@@ -669,8 +649,8 @@ void ImageBlur(Image img, int dx, int dy)
 
 	// Declarações & Instanciações:
 	Image imgTemp = ImageCreate(img->width, img->height, img->maxval);
-	assert(imgTemp!= NULL);
-	for (int i = 0; i < img->width * img->height; i++) {imgTemp->pixel[i] = img->pixel[i];}
+		if (imgTemp == NULL) {errCause ="The System Cannot Allocate Memory for the Temporary Image."; errno = 12;}
+			for (int i = 0; i < img->width * img->height; i++) {imgTemp->pixel[i] = img->pixel[i];} // Cópia do img->pixel para o imgTemp->pixel.
 	double med = 0;
 	double sum = 0;
 	double cnt = 0;
@@ -709,9 +689,74 @@ void ImageBlur(Image img, int dx, int dy)
 		// For Performance Metrics:
 		FORCNT += 1;
 	}
+
+	// Garbage Collector:
+	ImageDestroy(&imgTemp);
 }
 
+void ImageBlur(Image img, int dx, int dy)
+{
+	// Precondições:
+	assert(img != NULL);
+	assert(dx > 0);
+	assert(dy > 0);
+	
+	// Declarações & Instanciações:
+	int* kernel = (int *) malloc(sizeof(int)*img->width*img->height); // Criação de um Vetor (1D) para Armazenar as Consecutivas Médias dos Sub-Quadrados da Imagem.
+		if (kernel == NULL) {errCause = "The System Cannot Allocate Memory for Image Kernel."; errno = 12;}
+			for (int i = 0; i < img->width * img->height; i++) { kernel[i] = img->pixel[i]; } // Cópia do img->pixel para o kernel*.
+	double soma = 0;
+	double area = 0;
+	double media = 0;
 
+	// Processamento Auxiliar que Armazena as Consecutivas Médias dos Sub-Quadrados da Imagem:
+	for (int y = 0; y < img->height; y++)
+	{
+		for (int x = 0; x < img->width; x++)
+		{
+			FORCNT += 1; // For Performance Metrics.
+			if (x > 0) { kernel[G(img, x, y)] += kernel[G(img, x - 1, y)]; }				// Adiciona o Elemento da Horizontal Anterior.
+			if (y > 0) { kernel[G(img, x, y)] += kernel[G(img, x, y - 1)]; }				// Adiciona o Elemento da Vertical Anterior.
+			if (x > 0 && y > 0) { kernel[G(img, x, y)] -= kernel[G(img, x - 1, y - 1)]; } 	// Retira o Elemento da Obliqua Anterior.
+		}
+		FORCNT += 1; // For Performance Metrics.
+	}
+
+	// Processamento Principal: (Aplicar o Blur na Imagem)
+	for (int y = 0; y < img->height; y++)
+	{
+		FORCNT += 1; // For Performance Metrics.
+		for (int x = 0; x < img->width; x++)
+		{
+			// Sum dos Pixels:
+			soma = kernel[G(img, (x + dx >= img->width) ? img->width - 1 : x + dx,
+								(y + dy >= img->height) ? img->height - 1 : y + dy)] -
+
+				  kernel[G(img, (x + dx >= img->width) ? img->width - 1 : x + dx,
+								(y - dy - 1 < 0) ? 0 : y - dy - 1)] -
+
+				  kernel[G(img, (x - dx - 1 < 0) ? 0 : x - dx - 1,
+				  				(y + dy >= img->height) ? img->height - 1 : y + dy)] +
+
+				  kernel[G(img, (x - dx - 1 < 0) ? 0 : x - dx - 1,
+				  				(y - dy - 1 < 0) ? 0 : y - dy - 1)];
+
+			// Cálculo da Área do Pixel:
+			area = (((x + dx >= img->width) ? img->width - 1 : x + dx) - ((x - dx - 1 < 0) ? 0 : x - dx - 1)) * 
+			       (((y + dy >= img->height) ? img->height - 1 : y + dy) - ((y - dy - 1 < 0) ? 0 : y - dy - 1));
+
+			// Determinação da Média:
+			media = (soma / area) + 0.5;
+
+			// Aplicação do Valor de Blur ao Pixel:
+			ImageSetPixel(img, x, y, (uint8) media);
+		}
+		FORCNT += 1; // For Performance Metrics.
+	}
+
+	// Garbage Collector:
+	free(kernel);
+}
 
 
 
