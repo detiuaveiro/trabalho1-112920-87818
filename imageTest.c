@@ -11,55 +11,39 @@
 
 #include <assert.h>
 #include <errno.h>
-<<<<<<< HEAD
-#include <error.h>
-=======
 #include "error.h"
->>>>>>> upstream/main
 #include <stdio.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include "image8bit.h"
 #include "instrumentation.h"
 
-int main(int argc, char* argv[]) {
-<<<<<<< HEAD
-=======
+int main(int argc, char* argv[])
+{
   program_name = argv[0];
->>>>>>> upstream/main
-  if (argc != 3) {
-    error(1, 0, "Usage: imageTest input.pgm output.pgm");
-  }
-
+  if (argc != 3) { error(1, 0, "Usage: imageTest input.pgm output.pgm"); }
   ImageInit();
-  
-  printf("# LOAD image");
-  InstrReset(); // to reset instrumentation
-  Image img1 = ImageLoad(argv[1]);
-  if (img1 == NULL) {
-    error(2, errno, "Loading %s: %s", argv[1], ImageErrMsg());
-  }
-  InstrPrint(); // to print instrumentation
+ 
+  // cl imageTest.c image8bit.c instrumentation.c error.c
+ 
+  //Image img1 = ImageLoad("ComplexityTests/ImageLocateTests/Small/art4_300x300.pgm");
+  //Image img2 = ImageLoad("test/small.pgm");
+  //InstrReset();
+  //int pxTemp = 0;
+	//int pyTemp = 0;
+	//int* px = &pxTemp;
+	//int* py = &pyTemp;
+  //int success = ImageLocateSubImage(img1,px,py,img2);
+  //if (success == 0) { error(2, errno, "LOCATE img: %s", ImageErrMsg()); }
+  //InstrPrint();
 
-  // Try changing the behaviour of the program by commenting/uncommenting
-  // the appropriate lines.
-
-  //img2 = ImageCrop(img1, ImageWidth(img1)/4, ImageHeight(img1)/4, ImageWidth(img1)/2, ImageHeight(img1)/2);
-  Image img2 = ImageRotate(img1);
-  if (img2 == NULL) {
-    error(2, errno, "Rotating img2: %s", ImageErrMsg());
-  }
-
-  //ImageNegative(img2);
-  //ImageThreshold(img2, 100);
-  ImageBrighten(img2, 1.3);
-
-  if (ImageSave(img2, argv[2]) == 0) {
-    error(2, errno, "%s: %s", argv[2], ImageErrMsg());
-  }
+  Image img1 = ImageLoad("ComplexityTests/ImageLocateTests/VeryLarge/MojaveDay.pgm");
+  InstrReset();
+  ImageBlur(img1,2,2);
+  InstrPrint();
 
   ImageDestroy(&img1);
-  ImageDestroy(&img2);
+  //ImageDestroy(&img2);
   return 0;
 }
-

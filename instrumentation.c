@@ -88,7 +88,7 @@ double InstrCTU = 1.0;  ///extern
 void InstrCalibrate(void) { ///
   const int size = 4*1024;     // 2^12!
   const int mask = size - 1;
-  int array[size];  // alloc array in stack, not initialized on purpose
+  int array[4*1024];  // alloc array in stack, not initialized on purpose
   double time = cpu_time();
   srand((unsigned int)(time*1e9));
   for (int n = 0; n < 40000000; n++) {
@@ -115,7 +115,7 @@ void InstrPrint(void) { ///
   // compute time in calibrated time units:
   double caltime = time / InstrCTU;
 
-  printf("#%14.15s\t%15.15s", "time", "caltime");
+  printf("\n#%14.15s\t%15.15s", "time", "caltime");
   for (int i = 0; i < NUMCOUNTERS; i++)
     if (InstrName[i] != NULL)
       printf("\t%15.15s", InstrName[i]);

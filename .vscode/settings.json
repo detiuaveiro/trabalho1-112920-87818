@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "inttypes.h": "c",
+        "ctype.h": "c",
+        "errno.h": "c",
+        "stdio.h": "c",
+        "assert.h": "c",
+        "instrumentation.h": "c",
+        "string.h": "c"
+    }
+}

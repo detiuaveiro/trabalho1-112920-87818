@@ -13,11 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-<<<<<<< HEAD
-#include <error.h>
-=======
 #include "error.h"
->>>>>>> upstream/main
 #include <assert.h>
 
 #include "image8bit.h"
@@ -90,10 +86,7 @@ static char* errors[] = {
 // add new operations for that purpose.
 
 int main(int ac, char* av[]) {
-<<<<<<< HEAD
-=======
   program_name = av[0];
->>>>>>> upstream/main
   if (ac <= 1) {
     error(5, 0, "\n%s", USAGE);
   }
@@ -105,7 +98,7 @@ int main(int ac, char* av[]) {
 
   // The image buffer
   const int N = 10;   // buffer capacity
-  Image img[N];     // the images
+  Image img[10];     // the images
   int n = 0;          // number of images created
 
   int k = 1;

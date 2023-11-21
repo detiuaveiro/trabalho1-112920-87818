@@ -1,6 +1,7 @@
 # Others
 *.zip
 *.pgm
+*.txt
 test/
 imageTest
 imageTool
