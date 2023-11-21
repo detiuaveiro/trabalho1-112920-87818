@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
   //if (success == 0) { error(2, errno, "LOCATE img: %s", ImageErrMsg()); }
   //InstrPrint();
 
-  Image img1 = ImageLoad("ComplexityTests/ImageLocateTests/VeryLarge/MojaveDay.pgm");
+  Image img1 = ImageLoad("ComplexityTests/ImageLocateTests/Small/art3_222x217.pgm");
   InstrReset();
   ImageBlur(img1,2,2);
   InstrPrint();
