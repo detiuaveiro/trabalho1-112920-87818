@@ -22,9 +22,11 @@
 
 // Directives & Macros:
 
-#define PIXMEM InstrCount[0]		// Número de Acessos a Pixels.
-#define VALCOMP InstrCount[1]		// Número de Comparações entre Pixels.
-#define FORCNT InstrCount[2]		// Número de Ciclos de um For.
+#define PIXMEM InstrCount[0]										// Número de Acessos a Pixels.
+#define VALCOMP InstrCount[1]										// Número de Comparações entre Pixels.
+#define FORCNT InstrCount[2]										// Número de Ciclos de um For.
+#define COMP_EXTREMO_INICIAL(a,b) ( a < b ? b : a )					// Macro Auxiliar ao Blur Otimizado Para Determinar o Valor do Kernel Aplicável ao Lado Esquerdo e Lado Superior.
+#define COMP_EXTREMO_FINAL(a,b) ( a >= b ? b - 1 : a )				// Macro Auxiliar ao Blur Otimizado Para Determinar o Valor do Kernel Aplicável ao Lado Direito e Lado Inferior.
 
 
 // Declarações & Instanciações [Globais]:
@@ -156,6 +158,7 @@ void ImageDestroy(Image* imgp)
 
 
 // Funções para Leitura e Escrita de Imagens do Formato .PGM (Tipo P2):
+
 static int skipComments(FILE* f) // Função Auxiliar by JMR.
 {
 	char c;
@@ -163,6 +166,7 @@ static int skipComments(FILE* f) // Função Auxiliar by JMR.
 	while (fscanf(f, "#%*[^\n]%c", &c) == 1 && c == '\n') {i++;}
 	return i;
 } 
+
 Image ImageLoad(const char* filename) /* by JMR */
 {
 	// Declarações & Instanciações:
@@ -201,6 +205,7 @@ Image ImageLoad(const char* filename) /* by JMR */
 	// Return:
 	return img;
 }
+
 int ImageSave(Image img, const char* filename) /* by JMR */
 {
 	// Declarações & Instanciações:
@@ -366,6 +371,7 @@ void ImageSetPixel(Image img, int x, int y, uint8 level)
 
 
 // Algoritmos de Processamento de Imagens ao Nível do Pixel:
+
 void ImageNegative(Image img)
 {
 	// Precondições:
@@ -729,21 +735,14 @@ void ImageBlur(Image img, int dx, int dy)
 		for (int x = 0; x < img->width; x++)
 		{
 			// Sum dos Pixels:
-			soma = kernel[G(img, (x + dx >= img->width) ? img->width - 1 : x + dx,
-								(y + dy >= img->height) ? img->height - 1 : y + dy)] -
-
-				  kernel[G(img, (x + dx >= img->width) ? img->width - 1 : x + dx,
-								(y - dy - 1 < 0) ? 0 : y - dy - 1)] -
-
-				  kernel[G(img, (x - dx - 1 < 0) ? 0 : x - dx - 1,
-				  				(y + dy >= img->height) ? img->height - 1 : y + dy)] +
-
-				  kernel[G(img, (x - dx - 1 < 0) ? 0 : x - dx - 1,
-				  				(y - dy - 1 < 0) ? 0 : y - dy - 1)];
+			soma = kernel[ G(img, COMP_EXTREMO_FINAL(x + dx, img->width), COMP_EXTREMO_FINAL(y + dy, img->height)) ] - 
+				   kernel[ G(img, COMP_EXTREMO_FINAL(x + dx, img->width), COMP_EXTREMO_INICIAL(y - dy - 1, 0))	   ] - 
+				   kernel[ G(img, COMP_EXTREMO_INICIAL(x - dx - 1, 0),    COMP_EXTREMO_FINAL(y + dy, img->height)) ] + 
+				   kernel[ G(img, COMP_EXTREMO_INICIAL(x - dx - 1, 0),    COMP_EXTREMO_INICIAL(y - dy - 1, 0))     ];
 
 			// Cálculo da Área do Pixel:
-			area = (((x + dx >= img->width) ? img->width - 1 : x + dx) - ((x - dx - 1 < 0) ? 0 : x - dx - 1)) * 
-			       (((y + dy >= img->height) ? img->height - 1 : y + dy) - ((y - dy - 1 < 0) ? 0 : y - dy - 1));
+			area = (COMP_EXTREMO_FINAL(x + dx, img->width) - COMP_EXTREMO_INICIAL(x - dx - 1, 0)) *
+				   (COMP_EXTREMO_FINAL(y + dy, img->height)- COMP_EXTREMO_INICIAL(y - dy - 1, 0));
 
 			// Determinação da Média:
 			media = (soma / area) + 0.5;
